@@ -23,4 +23,6 @@ class Node {
     std::string to_string(std::string output = "");
 
     bool is_node();
+
+    static Node* from_string(std::string *input, Node *node = NULL);
 };

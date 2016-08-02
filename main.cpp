@@ -9,6 +9,10 @@
 typedef std::map<char, int> freq_map_t;
 typedef std::map<char, std::string> codemap;
 
+const int end_tree_mark = 0xDEADBEEF;
+const int end_tree_mark_sz = sizeof(end_tree_mark) * 8;
+const std::bitset<end_tree_mark_sz> end_tree_mark_bits = std::bitset<end_tree_mark_sz>(end_tree_mark);
+
 bool debug;
 
 freq_map_t build_freq_list(std::string str)
@@ -115,6 +119,7 @@ std::string encode_string(std::string str, codemap *cmap, std::string *tree_str)
   std::string buf;
 
   encoded += *tree_str;
+  encoded += end_tree_mark_bits.to_string();
 
   for (std::string::iterator iter = str.begin(); iter < str.end(); iter++)
   {
@@ -123,9 +128,6 @@ std::string encode_string(std::string str, codemap *cmap, std::string *tree_str)
 
   size_t hang_bits = encoded.length() & 7;
   packed += static_cast<char>(hang_bits);
-
-  size_t tree_str_len = tree_str->length();
-  packed += static_cast<char>(tree_str_len);
 
   for (int i = 0; i < encoded.length(); i++)
   {
@@ -203,31 +205,53 @@ char char_from_node_tree(std::string bufin, Node *root)
   return n->value;
 }
 
-std::string decode_string(std::string encoded_str, Node *root)
+std::string decode_string(std::string encoded_str)
 {
   std::string encoded_buf;
   encoded_buf.reserve(255);
+  size_t hang_bits = static_cast<int>(encoded_str[0]);
+  Node *tree;
 
   for (std::string::iterator iter = encoded_str.begin() + 1; iter != encoded_str.end(); iter++)
   {
     std::bitset<8> key(*iter);
+    // if (isprint(*iter)) std::cout << "bitset: " << key << std::endl;
     encoded_buf += key.to_string();
   }
 
-  std::string buf;
-  std::string out;
-  for (std::string::iterator iterr = encoded_buf.begin(); iterr != encoded_buf.end(); iterr++)
+  std::string tree_string;
+  for (int i = 0; i < encoded_buf.length(); i++)
   {
-    buf += *iterr;
-    char val = char_from_node_tree(buf, root);
-
-    if (val != "*"[0]) {
-      out += val;
-      buf = "";
+    int mark_set = std::bitset<end_tree_mark_sz>(encoded_buf.substr(i, end_tree_mark_sz)).to_ulong();
+    if (mark_set != end_tree_mark) {
+      tree_string += encoded_buf[i];
+    } else {
+      tree = Node::from_string(&tree_string);
+      break;
     }
   }
 
-  return out;
+  std::string st = tree->to_string();
+
+  std::cout << st << std::endl;
+
+
+  // std::cout << "encoded: " << encoded_buf << std::endl;
+
+  // std::string buf;
+  // std::string out;
+  // for (std::string::iterator iterr = encoded_buf.begin(); iterr != encoded_buf.end(); iterr++)
+  // {
+  //   buf += *iterr;
+  //   char val = char_from_node_tree(buf, root);
+
+  //   if (val != "*"[0]) {
+  //     out += val;
+  //     buf = "";
+  //   }
+  // }
+
+  // return out;
 }
 
 // TODO sort frequency map by frequency
@@ -265,7 +289,7 @@ int main(int argc, char *argv[])
   // 5. decode from constructed tree
   std::string decoded = decode_string(encoded_f);
 
-  std::cout << decoded << std::endl;
+  // std::cout << decoded << std::endl;
 
   // hexdump((unsigned char *)(encoded.c_str()), encoded.size());
 }
