@@ -12,6 +12,8 @@ class Node {
 
     Node(int freq, char val);
 
+    static Node* from_string(std::string *input, Node *node = NULL);
+
     Node* operator+(Node &right)
     {
       Node *ret = new Node(frequency + right.frequency, "*"[0]);
@@ -23,6 +25,5 @@ class Node {
     std::string to_string(std::string output = "");
 
     bool is_node();
-
-    static Node* from_string(std::string *input, Node *node = NULL);
+    bool is_full();
 };

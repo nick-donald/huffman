@@ -1,7 +1,11 @@
 #include "node.hpp"
 #include <bitset>
+#include <stack>
 
-const int NODE_VAL = 0x2A;
+const int NODE_VAL   = 0x2A;
+
+const char NODE_ZERO = 0x30; // "0"
+const char NODE_ONE  = 0x31; // "1"
 
 Node::Node(int freq, char val)
 {
@@ -13,6 +17,11 @@ Node::Node(int freq, char val)
 bool Node::is_node()
 {
   return value == "*"[0];
+}
+
+bool Node::is_full()
+{
+  return leftNode != NULL && rightNode != NULL;
 }
 
 std::string Node::to_string(std::string output)
@@ -45,33 +54,42 @@ Node* Node::from_string(std::string *input, Node *node)
     node = new Node(0, NODE_VAL);
   }
 
-  Node *curr_node = node;
+  std::stack<Node *> node_stack;
+
+  node_stack.push(node);
 
   for (int i = 1; i < input->length(); i++) {
-    std::cout << input->at(i) << std::endl;
 
-    if (input->at(i) == NODE_VAL) {
-      if (curr_node->leftNode == NULL) {
-        curr_node->leftNode = new Node(0, NODE_VAL);
-        curr_node = curr_node->leftNode;
-      } else {
-        curr_node->rightNode = new Node(0, NODE_VAL);
-        curr_node = curr_node->rightNode;
+    if (input->at(i) == NODE_ZERO) {
+      Node *curr_node = new Node(0, NODE_VAL);
+
+      if (node_stack.top() != NULL) {
+        Node *parent_node = node_stack.top();
+
+        if (parent_node->leftNode == NULL) {
+          parent_node->leftNode = curr_node;
+        } else {
+          parent_node->rightNode = curr_node;
+        }
       }
+      node_stack.push(curr_node);
     } else {
+      Node *parent_node = node_stack.top();
+
       std::bitset<8> chr(input->substr(i + 1, i + 8));
-      std::cout << "char: " << input->substr(i + 1, i + 8) << std::endl;
       char value = static_cast<char>(chr.to_ulong());
 
-      if (curr_node->leftNode == NULL) {
-        curr_node->leftNode = new Node(0, value);
-      } else {
-        curr_node->rightNode = new Node(0, value);
+      if (parent_node->leftNode == NULL) {
+        parent_node->leftNode = new Node(0, value);
+      } else if (parent_node->rightNode == NULL) {
+        parent_node->rightNode = new Node(0, value);
       }
-      // std::cout << value << std::endl;
 
-      i = i + 9;
+      if (parent_node->is_full()) node_stack.pop();
+
+      i += 8;
     }
   }
+
   return node;
 }

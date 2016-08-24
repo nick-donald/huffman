@@ -231,12 +231,7 @@ std::string decode_string(std::string encoded_str)
     }
   }
 
-  std::string st = tree->to_string();
-
-  std::cout << st << std::endl;
-
-
-  // std::cout << "encoded: " << encoded_buf << std::endl;
+  // TODO decode string with node tree `tree`
 
   // std::string buf;
   // std::string out;
